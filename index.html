@@ -121,8 +121,7 @@
     <div id="chances">Chances Restantes: 5</div>
     <div id="feedback-text"></div>
     <div id="feedback"></div>
-
-    <script>
+        <script>
         const gridSize = 5;
         const maxChances = 5;
         const emojis = ['🍎', '🍊', '🍋', '🍇', '🍓'];
@@ -135,6 +134,7 @@
         let gameStarted = false;
 
         function initializeGame() {
+            console.log("Inicializando o jogo..."); // Para depuração
             // Resetar variáveis
             score = 0;
             chances = maxChances;
@@ -146,6 +146,8 @@
             document.getElementById('restart-btn').style.display = 'none';
             document.getElementById('feedback-text').textContent = '';
             document.getElementById('feedback').style.display = 'none';
+            document.getElementById('score').style.display = 'block';
+            document.getElementById('grid').style.display = 'grid';
             document.getElementById('chances').style.display = 'block';
 
             // Criar grid
@@ -185,6 +187,7 @@
         }
 
         function renderGrid() {
+            console.log("Renderizando o grid..."); // Para depuração
             const gridElement = document.getElementById('grid');
             gridElement.innerHTML = '';
             for (let i = 0; i < gridSize; i++) {
@@ -293,4 +296,56 @@
                             matchesFound = true;
                         }
                         // Checar vertical
-               
+                        if (i <= gridSize - 3 && grid[i][j] === grid[i+1][j] && grid[i][j] === grid[i+2][j]) {
+                            for (let k = 0; k < 3; k++) toRemove.add(`${i+k},${j}`);
+                            matchesFound = true;
+                        }
+                    }
+                }
+
+                // Remover grupos e calcular pontos
+                toRemove.forEach(coord => {
+                    const [i, j] = coord.split(',').map(Number);
+                    grid[i][j] = null;
+                    score += 10; // 10 pontos por emoji removido
+                });
+
+                // Fazer emojis caírem
+                for (let j = 0; j < gridSize; j++) {
+                    let emptyRow = gridSize - 1;
+                    for (let i = gridSize - 1; i >= 0; i--) {
+                        if (grid[i][j] !== null) {
+                            grid[emptyRow][j] = grid[i][j];
+                            if (emptyRow !== i) grid[i][j] = null;
+                            emptyRow--;
+                        }
+                    }
+                    // Preencher com novos emojis
+                    for (let i = emptyRow; i >= 0; i--) {
+                        grid[i][j] = emojis[Math.floor(Math.random() * emojis.length)];
+                    }
+                }
+
+                document.getElementById('score').textContent = `Pontos: ${score}`;
+                renderGrid();
+            } while (matchesFound);
+        }
+
+        // Garantir que o botão "Iniciar Jogo" funcione
+        document.getElementById('start-btn').addEventListener('click', () => {
+            console.log("Botão Iniciar Jogo clicado!"); // Para depuração
+            gameStarted = true;
+            document.getElementById('start-btn').style.display = 'none';
+            document.getElementById('score').style.display = 'block';
+            document.getElementById('grid').style.display = 'grid';
+            document.getElementById('chances').style.display = 'block';
+            initializeGame();
+        });
+
+        document.getElementById('restart-btn').addEventListener('click', () => {
+            console.log("Botão Novo Jogo clicado!"); // Para depuração
+            initializeGame();
+        });
+    </script>
+</body>
+</html>
