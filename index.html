@@ -118,12 +118,12 @@
     <div id="score">Pontos: 0</div>
     <div id="grid"></div>
     <button id="restart-btn">Novo Jogo</button>
-    <div id="chances">Chances Restantes: 5</div>
+    <div id="chances">Chances Restantes: 3</div>
     <div id="feedback-text"></div>
     <div id="feedback"></div>
         <script>
         const gridSize = 5;
-        const maxChances = 5;
+        const maxChances = 3; // Reduzido de 5 para 3
         const emojis = ['🍎', '🍊', '🍋', '🍇', '🍓'];
         let grid = [];
         let score = 0;
@@ -134,7 +134,7 @@
         let gameStarted = false;
 
         function initializeGame() {
-            console.log("Inicializando o jogo..."); // Para depuração
+            console.log("Inicializando o jogo...");
             // Resetar variáveis
             score = 0;
             chances = maxChances;
@@ -145,7 +145,9 @@
             document.getElementById('chances').textContent = `Chances Restantes: ${chances}`;
             document.getElementById('restart-btn').style.display = 'none';
             document.getElementById('feedback-text').textContent = '';
-            document.getElementById('feedback').style.display = 'none';
+            document.getElementById('feedback-text').style.display = 'none';
+            document.getElementById('feedback').innerHTML = '<img src="https://i.ibb.co/wN5N3mRH/IMG-1389.jpg" alt="Certo">';
+            document.getElementById('feedback').style.display = 'block';
             document.getElementById('score').style.display = 'block';
             document.getElementById('grid').style.display = 'grid';
             document.getElementById('chances').style.display = 'block';
@@ -187,7 +189,7 @@
         }
 
         function renderGrid() {
-            console.log("Renderizando o grid..."); // Para depuração
+            console.log("Renderizando o grid...");
             const gridElement = document.getElementById('grid');
             gridElement.innerHTML = '';
             for (let i = 0; i < gridSize; i++) {
@@ -231,7 +233,6 @@
                 if (checkMatches()) {
                     consecutiveErrors = 0; // Resetar erros seguidos
                     handleMatches();
-                    document.getElementById('feedback-text').textContent = 'Boa, Peach!';
                 } else {
                     // Reverter a troca
                     const temp = grid[selectedCell.row][selectedCell.col];
@@ -240,17 +241,7 @@
                     consecutiveErrors++;
                     chances--;
                     document.getElementById('chances').textContent = `Chances Restantes: ${chances}`;
-                    document.getElementById('feedback-text').textContent = 'Troca inválida!';
                 }
-
-                // Mostrar imagem de "certo" durante o jogo
-                document.getElementById('feedback').innerHTML = '<img src="https://i.ibb.co/wN5N3mRH/IMG-1389.jpg" alt="Certo">';
-                document.getElementById('feedback').style.display = 'block';
-                document.getElementById('feedback-text').style.display = 'block';
-                setTimeout(() => {
-                    document.getElementById('feedback').style.display = 'none';
-                    document.getElementById('feedback-text').style.display = 'none';
-                }, 2000);
 
                 selectedCell = null;
                 renderGrid();
@@ -331,9 +322,8 @@
             } while (matchesFound);
         }
 
-        // Garantir que o botão "Iniciar Jogo" funcione
         document.getElementById('start-btn').addEventListener('click', () => {
-            console.log("Botão Iniciar Jogo clicado!"); // Para depuração
+            console.log("Botão Iniciar Jogo clicado!");
             gameStarted = true;
             document.getElementById('start-btn').style.display = 'none';
             document.getElementById('score').style.display = 'block';
@@ -343,7 +333,7 @@
         });
 
         document.getElementById('restart-btn').addEventListener('click', () => {
-            console.log("Botão Novo Jogo clicado!"); // Para depuração
+            console.log("Botão Novo Jogo clicado!");
             initializeGame();
         });
     </script>
