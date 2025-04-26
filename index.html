@@ -1,0 +1,242 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>Memória de Sons da Peach</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap" rel="stylesheet">
+    <style>
+        body {
+            background-color: #4A2C2A; /* Marrom Escuro */
+            font-family: 'Poppins', sans-serif;
+            color: #F5F5DC; /* Bege Claríssimo */
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 20px;
+            margin: 0;
+            text-align: center;
+        }
+        h1 {
+            font-size: 1.5rem;
+            margin-bottom: 10px;
+        }
+        #attempts {
+            font-size: 1rem;
+            margin-bottom: 20px;
+        }
+        #grid {
+            display: grid;
+            grid-template-columns: repeat(5, 60px);
+            gap: 5px;
+            margin-bottom: 20px;
+        }
+        .cell {
+            width: 60px;
+            height: 60px;
+            background-color: #C4A484; /* Bege Médio */
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1rem;
+            border-radius: 5px;
+            cursor: pointer;
+            user-select: none;
+        }
+        .cell.revealed {
+            background-color: #C4A484; /* Bege Médio (mesmo tom, mas com emoji visível) */
+            font-size: 1.5rem;
+            color: #000000; /* Preto para contraste */
+        }
+        #restart-btn {
+            background-color: #B76E79; /* Rosa Queimado */
+            color: #F5F5DC; /* Bege Claríssimo */
+            border: none;
+            padding: 10px 20px;
+            font-size: 1rem;
+            font-family: 'Poppins', sans-serif;
+            border-radius: 5px;
+            cursor: pointer;
+            display: none;
+        }
+        #feedback-text {
+            font-size: 1rem;
+            margin-top: 20px;
+            margin-bottom: 10px;
+        }
+        #feedback {
+            display: none;
+        }
+        #feedback img {
+            width: 150px;
+            height: auto;
+            border-radius: 10px;
+        }
+        @media (max-width: 600px) {
+            h1 {
+                font-size: 1.2rem;
+            }
+            #attempts, #feedback-text {
+                font-size: 0.9rem;
+            }
+            #grid {
+                grid-template-columns: repeat(5, 50px);
+            }
+            .cell {
+                width: 50px;
+                height: 50px;
+                font-size: 0.9rem;
+            }
+            .cell.revealed {
+                font-size: 1.2rem;
+            }
+            #restart-btn {
+                font-size: 0.9rem;
+                padding: 8px 12px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <h1>Memória de Sons da Peach</h1>
+    <div id="attempts">Tentativas Restantes: 20</div>
+    <div id="grid"></div>
+    <button id="restart-btn">Novo Jogo</button>
+    <div id="feedback-text"></div>
+    <div id="feedback"></div>
+
+    <script>
+        const gridSize = 5;
+        const totalPairs = 3; // 3 pares de sons (6 células)
+        const maxAttempts = 20;
+        let grid = [];
+        let attempts = maxAttempts;
+        let pairsFound = 0;
+        let firstCell = null;
+        let secondCell = null;
+        let gameOver = false;
+
+        // Sons
+        const sounds = [
+            new Audio('https://assets.mixkit.co/sfx/preview/mixkit-dog-barking-2-61.mp3'), // Woof 1
+            new Audio('https://cdn.videvo.net/audio/dog-barking-harsh-2_444026.mp3'),      // Woof 2
+            new Audio('https://cdn.pixabay.com/audio/2022/03/15/02-05-00-15291_1.mp3')    // Grr
+        ];
+
+        function initializeGame() {
+            // Resetar variáveis
+            attempts = maxAttempts;
+            pairsFound = 0;
+            firstCell = null;
+            secondCell = null;
+            gameOver = false;
+            document.getElementById('attempts').textContent = `Tentativas Restantes: ${attempts}`;
+            document.getElementById('restart-btn').style.display = 'none';
+            document.getElementById('feedback-text').textContent = '';
+            document.getElementById('feedback').style.display = 'none';
+
+            // Criar grid com pares de sons
+            const soundIndices = [0, 0, 1, 1, 2, 2]; // 3 pares (Woof 1, Woof 2, Grr)
+            soundIndices.sort(() => Math.random() - 0.5); // Embaralhar
+
+            grid = [];
+            let soundIndex = 0;
+            for (let i = 0; i < gridSize; i++) {
+                const row = [];
+                for (let j = 0; j < gridSize; j++) {
+                    if (soundIndex < soundIndices.length) {
+                        row.push({ sound: soundIndices[soundIndex], revealed: false, matched: false });
+                        soundIndex++;
+                    } else {
+                        row.push(null); // Células vazias
+                    }
+                }
+                grid.push(row);
+            }
+
+            renderGrid();
+        }
+
+        function renderGrid() {
+            const gridElement = document.getElementById('grid');
+            gridElement.innerHTML = '';
+            for (let i = 0; i < gridSize; i++) {
+                for (let j = 0; j < gridSize; j++) {
+                    const cell = document.createElement('div');
+                    cell.classList.add('cell');
+                    if (grid[i][j] && grid[i][j].matched) {
+                        cell.classList.add('revealed');
+                        cell.textContent = '🎵';
+                    } else if (grid[i][j] && grid[i][j].revealed) {
+                        cell.classList.add('revealed');
+                        cell.textContent = '🎵';
+                    }
+                    cell.addEventListener('click', () => handleCellClick(i, j));
+                    gridElement.appendChild(cell);
+                }
+            }
+        }
+
+        function handleCellClick(row, col) {
+            if (gameOver || !grid[row][col] || grid[row][col].matched || (firstCell && secondCell)) return;
+
+            grid[row][col].revealed = true;
+            sounds[grid[row][col].sound].play();
+            renderGrid();
+
+            if (!firstCell) {
+                firstCell = { row, col };
+            } else {
+                secondCell = { row, col };
+                attempts--;
+                document.getElementById('attempts').textContent = `Tentativas Restantes: ${attempts}`;
+
+                if (grid[firstCell.row][firstCell.col].sound === grid[secondCell.row][secondCell.col].sound) {
+                    // Par encontrado
+                    grid[firstCell.row][firstCell.col].matched = true;
+                    grid[secondCell.row][secondCell.col].matched = true;
+                    pairsFound++;
+                    firstCell = null;
+                    secondCell = null;
+                    renderGrid();
+
+                    if (pairsFound === totalPairs) {
+                        gameOver = true;
+                        document.getElementById('feedback-text').textContent = 'Parabéns, Peach!';
+                        document.getElementById('feedback').innerHTML = '<img src="https://i.ibb.co/wN5N3mRH/IMG-1389.jpg" alt="Certo">';
+                        document.getElementById('feedback').style.display = 'block';
+                        document.getElementById('restart-btn').style.display = 'inline-block';
+                    }
+                } else {
+                    // Par errado
+                    document.getElementById('feedback-text').textContent = 'Ops, sons diferentes!';
+                    document.getElementById('feedback').innerHTML = '<img src="https://i.ibb.co/hJBYqfPw/IMG-1390.jpg" alt="Errado">';
+                    document.getElementById('feedback').style.display = 'block';
+
+                    setTimeout(() => {
+                        grid[firstCell.row][firstCell.col].revealed = false;
+                        grid[secondCell.row][secondCell.col].revealed = false;
+                        firstCell = null;
+                        secondCell = null;
+                        document.getElementById('feedback').style.display = 'none';
+                        document.getElementById('feedback-text').textContent = '';
+                        renderGrid();
+
+                        if (attempts <= 0) {
+                            gameOver = true;
+                            document.getElementById('feedback-text').textContent = 'Tente de novo!';
+                            document.getElementById('feedback').innerHTML = '<img src="https://i.ibb.co/hJBYqfPw/IMG-1390.jpg" alt="Errado">';
+                            document.getElementById('feedback').style.display = 'block';
+                            document.getElementById('restart-btn').style.display = 'inline-block';
+                        }
+                    }, 2000);
+                }
+            }
+        }
+
+        document.getElementById('restart-btn').addEventListener('click', initializeGame);
+
+        initializeGame();
+    </script>
+</body>
+</html>
