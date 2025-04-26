@@ -32,7 +32,7 @@
             cursor: pointer;
             margin-bottom: 20px;
         }
-        #score {
+        #score, #timer {
             font-size: 1rem;
             margin-bottom: 10px;
             display: none;
@@ -94,7 +94,7 @@
             h1 {
                 font-size: 1.2rem;
             }
-            #score, #chances, #feedback-text {
+            #score, #timer, #chances, #feedback-text {
                 font-size: 0.9rem;
             }
             #grid {
@@ -116,6 +116,7 @@
     <h1>Doce Aventura da Peach</h1>
     <button id="start-btn">Iniciar Jogo</button>
     <div id="score">Pontos: 0</div>
+    <div id="timer">Tempo Restante: 5</div>
     <div id="grid"></div>
     <button id="restart-btn">Novo Jogo</button>
     <div id="chances">Chances Restantes: 2</div>
@@ -123,26 +124,29 @@
     <div id="feedback"></div>
 
     <script>
-        const gridSize = 6; // Aumentado de 5 para 6
-        const maxChances = 2; // Reduzido de 3 para 2
-        const emojis = ['🍎', '🍊', '🍋', '🍇', '🍓', '🍉']; // Adicionado 🍉
+        const gridSize = 6;
+        const maxChances = 2;
+        const timeLimit = 5; // 5 segundos por jogada
+        const emojis = ['🍎', '🍊', '🍋', '🍇', '🍓', '🍉'];
         let grid = [];
         let score = 0;
         let chances = maxChances;
-        let consecutiveErrors = 0;
         let selectedCell = null;
         let gameOver = false;
         let gameStarted = false;
+        let timeLeft = timeLimit;
+        let timerId = null;
 
         function initializeGame() {
             console.log("Inicializando o jogo...");
             // Resetar variáveis
             score = 0;
             chances = maxChances;
-            consecutiveErrors = 0;
             selectedCell = null;
             gameOver = false;
+            timeLeft = timeLimit;
             document.getElementById('score').textContent = `Pontos: ${score}`;
+            document.getElementById('timer').textContent = `Tempo Restante: ${timeLeft}`;
             document.getElementById('chances').textContent = `Chances Restantes: ${chances}`;
             document.getElementById('restart-btn').style.display = 'none';
             document.getElementById('feedback-text').textContent = '';
@@ -150,6 +154,7 @@
             document.getElementById('feedback').innerHTML = '<img src="https://i.ibb.co/wN5N3mRH/IMG-1389.jpg" alt="Certo">';
             document.getElementById('feedback').style.display = 'block';
             document.getElementById('score').style.display = 'block';
+            document.getElementById('timer').style.display = 'block';
             document.getElementById('grid').style.display = 'grid';
             document.getElementById('chances').style.display = 'block';
 
@@ -166,6 +171,42 @@
             // Garantir que não haja combinações iniciais
             removeInitialMatches();
             renderGrid();
+            startTimer();
+        }
+
+        function startTimer() {
+            if (timerId) clearInterval(timerId); // Limpar timer anterior
+            timeLeft = timeLimit;
+            document.getElementById('timer').textContent = `Tempo Restante: ${timeLeft}`;
+            timerId = setInterval(() => {
+                timeLeft--;
+                document.getElementById('timer').textContent = `Tempo Restante: ${timeLeft}`;
+                if (timeLeft <= 0 && !gameOver) {
+                    clearInterval(timerId);
+                    handleTimeOut();
+                }
+            }, 1000);
+        }
+
+        function handleTimeOut() {
+            chances--;
+            score = Math.max(0, score - 5); // Penalidade de 5 pontos
+            document.getElementById('score').textContent = `Pontos: ${score}`;
+            document.getElementById('chances').textContent = `Chances Restantes: ${chances}`;
+            selectedCell = null;
+            renderGrid();
+
+            if (chances <= 0) {
+                gameOver = true;
+                clearInterval(timerId);
+                document.getElementById('feedback-text').textContent = `Game Over! Pontos: ${score}`;
+                document.getElementById('feedback').innerHTML = '<img src="https://i.ibb.co/hJBYqfPw/IMG-1390.jpg" alt="Errado">';
+                document.getElementById('feedback').style.display = 'block';
+                document.getElementById('feedback-text').style.display = 'block';
+                document.getElementById('restart-btn').style.display = 'inline-block';
+            } else {
+                startTimer();
+            }
         }
 
         function removeInitialMatches() {
@@ -232,28 +273,26 @@
 
                 // Verificar se a troca forma um grupo
                 if (checkMatches()) {
-                    consecutiveErrors = 0; // Resetar erros seguidos
-                    chances = maxChances; // Resetar chances ao acertar
-                    document.getElementById('chances').textContent = `Chances Restantes: ${chances}`;
                     handleMatches();
                 } else {
                     // Reverter a troca
                     const temp = grid[selectedCell.row][selectedCell.col];
                     grid[selectedCell.row][selectedCell.col] = grid[row][col];
                     grid[row][col] = temp;
-                    consecutiveErrors++;
                     chances--;
-                    score = Math.max(0, score - 5); // Penalidade de 5 pontos, mas não negativa
+                    score = Math.max(0, score - 5); // Penalidade de 5 pontos
                     document.getElementById('score').textContent = `Pontos: ${score}`;
                     document.getElementById('chances').textContent = `Chances Restantes: ${chances}`;
                 }
 
                 selectedCell = null;
                 renderGrid();
+                startTimer(); // Reiniciar o cronômetro após cada jogada
 
                 // Verificar game over
                 if (chances <= 0) {
                     gameOver = true;
+                    clearInterval(timerId);
                     document.getElementById('feedback-text').textContent = `Game Over! Pontos: ${score}`;
                     document.getElementById('feedback').innerHTML = '<img src="https://i.ibb.co/hJBYqfPw/IMG-1390.jpg" alt="Errado">';
                     document.getElementById('feedback').style.display = 'block';
@@ -332,6 +371,7 @@
             gameStarted = true;
             document.getElementById('start-btn').style.display = 'none';
             document.getElementById('score').style.display = 'block';
+            document.getElementById('timer').style.display = 'block';
             document.getElementById('grid').style.display = 'grid';
             document.getElementById('chances').style.display = 'block';
             initializeGame();
